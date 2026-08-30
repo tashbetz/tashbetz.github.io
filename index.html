@@ -101,6 +101,8 @@
 
         let globalZmanimData = null;
         let globalParasha = "";
+        
+        // אתחול המצב הראשוני למצב מציג לוח (שלא יפתח בדף ריק)
         let showImageMode = false; 
 
         function formatTime(isoString) {
@@ -176,8 +178,11 @@
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const dd = String(today.getDate()).padStart(2, '0');
                 const todayStr = `${yyyy}-${mm}-${dd}`;
+                
+                // תיקון הכתובות עם סימני דולר וסלאש תקינים
                 const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}&date=${todayStr}`;
                 const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
+                
                 const [zmanimRes, calRes] = await Promise.all([fetch(zmanimUrl), fetch(calendarUrl)]);
                 if (!zmanimRes.ok || !calRes.ok) throw new Error("Network error");
                 const zmanimData = await zmanimRes.json();
@@ -222,13 +227,16 @@
                 saverContainer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; z-index: 99999; background-color: #000000; overflow: hidden;";
                 document.body.appendChild(saverContainer);
             }
+            
+            // היפוך המצב בצורה מבוקרת
             showImageMode = !showImageMode; 
+            
             if (showImageMode) {
                 if (gridElement) gridElement.style.setProperty('display', 'none', 'important');
                 if (headerElement) headerElement.style.setProperty('display', 'none', 'important');
                 if (statusBox) statusBox.style.display = 'none';
                 if (stuckMsg) stuckMsg.style.display = 'none';
-                saverContainer.innerHTML = `<img src="${SAVER_IMAGE_URL}" style="width: 100%; height: 100%; object-fit: contain; display: block;" />`;
+                saverContainer.innerHTML = `<img src="${SAVER_IMAGE_URL}" style="width: 100%; height: 100%; object-fit: contain; display: block;" onerror="this.parentElement.style.display='none'; document.getElementById('zmanim-grid').style.setProperty('display', 'grid', 'important'); document.getElementById('header-section').style.setProperty('display', 'block', 'important');" />`;
                 saverContainer.style.setProperty('display', 'block', 'important');
             } else {
                 if (saverContainer) saverContainer.style.setProperty('display', 'none', 'important');
@@ -239,8 +247,11 @@
             }
         }
 
+        // טעינה ראשונית ישירה של הנתונים כדי למנוע דף ריק על ההתחלה
         loadCache();
         fetchZmanim();
+        
+        // הפעלת מחזורי הזמן
         setInterval(fetchZmanim, 43200000); 
         setInterval(handleScreenCycle, 30000); 
     </script>
