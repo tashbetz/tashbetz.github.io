@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>זמני היום בהלכה ופרשת השבוע</title>
+    <title>זמני היום בהלכה לפי אופק כפר הרא"ה ופרשת השבוע</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -143,22 +143,22 @@
     let globalZmanimData = null;
     let globalParasha = "";
     
-    // ניהול זמני המסך: 0 = מציג זמנים (0-60 שניות), 3 = עובר לשעון (60-80 שניות)
+    // Cycle management: 0, 1, 2 = Displaying board (60s) | 3 = Screen saver (20s)
     let tickCounter = 0; 
 
     function formatTime(isoString) {
-        if (!isoString) return "-";
+        if (!isoString || isoString === "-") return "-";
         const date = new Date(isoString);
         return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    // המרת מספרים לאותיות גימטריות
+    // Convert numbers to Hebrew Gematria letters (e.g., תשפ"ו, ט"ו, ט"ז)
     function numToGematria(num, isYear = false) {
         if (!isYear && num === 15) return 'ט"ו';
         if (!isYear && num === 16) return 'ט"ז';
         
         const units = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
-        const tens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
+        const safeTens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
         
         let parts = [];
         
@@ -170,7 +170,7 @@
         let t = Math.floor(num / 10);
         let u = num % 10;
         
-        if (t > 0) parts.push(tens[t]);
+        if (t > 0) parts.push(safeTens[t]);
         if (u > 0) parts.push(units[u]);
         
         let str = parts.join("");
@@ -182,7 +182,7 @@
         return str;
     }
 
-    // תאריך עברי מקומי אופליין
+    // Completely offline local Hebrew date parsing
     function getFallbackHebrewDate() {
         const today = new Date();
         const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -195,21 +195,21 @@
         return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
     }
 
-    // הצגת נתוני הזמנים במסך
+    // Populates data to your original HTML element IDs
     function displayZmanim(zmanimData) {
         if (!zmanimData) return;
-        document.getElementById('alotHaShachar').innerText = formatTime(zmanimData.alotHaShachar || zmanimData.alot);
+        document.getElementById('alotHaShachar').innerText = formatTime(zmanimData.alotHaShachar || zmanimData.alotDawn);
         document.getElementById('misheyakir').innerText = formatTime(zmanimData.misheyakir);
         document.getElementById('sunrise').innerText = formatTime(zmanimData.sunrise);
-        document.getElementById('sofZmanShmaMGA').innerText = formatTime(zmanimData.sofZmanShmaMGA);
-        document.getElementById('sofZmanShma').innerText = formatTime(zmanimData.sofZmanShma);
-        document.getElementById('sofZmanTfilla').innerText = formatTime(zmanimData.sofZmanTfilla);
+        document.getElementById('sofZmanShmaMGA').innerText = formatTime(zmanimData.sofZmanShmaMGA || zmanimData.sofZmanShmaMagenAvraham);
+        document.getElementById('sofZmanShma').innerText = formatTime(zmanimData.sofZmanShma || zmanimData.sofZmanShmaGra);
+        document.getElementById('sofZmanTfilla').innerText = formatTime(zmanimData.sofZmanTfilla || zmanimData.sofZmanTfillaGra);
         document.getElementById('chatzot').innerText = formatTime(zmanimData.chatzot);
         document.getElementById('minchaGedola').innerText = formatTime(zmanimData.minchaGedola);
         document.getElementById('minchaKetana').innerText = formatTime(zmanimData.minchaKetana);
-        document.getElementById('plagHaMincha').innerText = formatTime(zmanimData.plagHaMincha);
+        document.getElementById('plagHaMincha').innerText = formatTime(zmanimData.plagHaMincha || zmanimData.plagHamincha);
         document.getElementById('sunset').innerText = formatTime(zmanimData.sunset);
-        document.getElementById('tzeitHaKochavimRT').innerText = formatTime(zmanimData.tzeitHaKochavim || zmanimData.tzeit);
+        document.getElementById('tzeitHaKochavimRT').innerText = formatTime(zmanimData.tzeitHaKochavim || zmanimData.tzeit85deg);
     }
 
     function updateHeaderElements(hebrewDateStr, parashaStr) {
@@ -228,7 +228,7 @@
         }
     }
 
-    // משיכת נתונים משרתי Hebcal ברקע ללא הפרעה לתצוגה
+    // Fixed background fetch with correctly structured API links
     async function fetchZmanim() {
         if (!navigator.onLine) return;
 
@@ -239,11 +239,12 @@
             const dd = String(today.getDate()).padStart(2, '0');
             const todayStr = `${yyyy}-${mm}-${dd}`;
 
-            const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}`;
+            // Fixed endpoint mappings
+            const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}&date=${todayStr}`;
             const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
 
             const [zmanimRes, calRes] = await Promise.all([fetch(zmanimUrl), fetch(calendarUrl)]);
-            if (!zmanimRes.ok || !calRes.ok) throw new Error("רשת לא זמינה");
+            if (!zmanimRes.ok || !calRes.ok) throw new Error("Network error");
             
             const zmanimData = await zmanimRes.json();
             const calData = await calRes.json();
@@ -258,13 +259,15 @@
             localStorage.setItem('zmanim_cache', JSON.stringify(globalZmanimData));
             localStorage.setItem('parasha_cache', globalParasha);
 
-            // עדכון הממשק מיידית רק אם אנחנו כרגע במצב תצוגת לוח (tick 0, 1, 2)
             if (tickCounter < 3) {
                 displayZmanim(globalZmanimData);
                 updateHeaderElements(getFallbackHebrewDate(), globalParasha);
             }
+            
+            const statusBox = document.getElementById('status-msg');
+            if (statusBox) statusBox.style.display = 'none';
         } catch (error) {
-            console.log("קריאת ה-fetch נכשלה, משתמשים במטמון המקומי.");
+            console.log("Fetch failed, running on saved cache.");
         }
     }
 
@@ -279,7 +282,6 @@
         if (globalZmanimData) displayZmanim(globalZmanimData);
     }
 
-    // ניהול מחזור המערכת - פועל בכל 20 שניות
     function handleScreenCycle() {
         const today = new Date();
         
@@ -296,11 +298,10 @@
             document.body.appendChild(saverClock);
         }
 
-        // קידום המונה ב-1 (כל פעימה שווה 20 שניות)
         tickCounter = (tickCounter + 1) % 4; 
 
         if (tickCounter === 3) {
-            // --- פעימה 4 (שניות 60 עד 80): שומר מסך למשך 20 שניות ---
+            // --- Screen Saver Mode (Seconds 60 to 80) ---
             if (gridElement) gridElement.style.display = 'none';
             if (headerElement) headerElement.style.display = 'none';
             if (statusBox) statusBox.style.display = 'none';
@@ -309,7 +310,6 @@
             const currentTime = today.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
             const currentHebDate = getFallbackHebrewDate();
 
-            // הגנה מצריבה: מזיזים את הטקסט אנכית באופן אקראי קל בכל פעם שהוא נדלק
             const randomPadding = Math.floor(Math.random() * 40) + 20; 
 
             saverClock.innerHTML = `
@@ -320,26 +320,22 @@
             `;
             saverClock.style.display = 'block';
         } else {
-            // --- פעימות 1, 2, 3 (שניות 0 עד 60): הצגת לוח הזמנים המלא למשך דקה ---
+            // --- Standard Board Mode (Seconds 0 to 60) ---
             if (saverClock) saverClock.style.display = 'none';
             
             if (gridElement) gridElement.style.display = gridElement.tagName === 'TABLE' ? 'table' : 'grid';
             if (headerElement) headerElement.style.display = 'block';
             
-            // עדכון המידע המוצג בלוח
             updateHeaderElements(getFallbackHebrewDate(), globalParasha);
             if (globalZmanimData) displayZmanim(globalZmanimData);
         }
     }
 
-    // --- אתחול ראשוני ---
+    // --- Init ---
     loadCache();
     fetchZmanim();
 
-    // קריאת רשת ברקע פעם ב-12 שעות
     setInterval(fetchZmanim, 43200000);
-
-    // הפעלת לולאת הבדיקה וההחלפה בדיוק כל 20 שניות
     setInterval(handleScreenCycle, 20000);
 </script>
 
