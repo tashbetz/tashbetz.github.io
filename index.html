@@ -136,12 +136,15 @@
         <tr><td class="zmanim-title">צאת הכוכבים</td><td class="zmanim-time" id="tzeitHaKochavimRT">-</td></tr>
     </table>
 </div>
-
 <script>
     const LAT = 32.393056; 
     const LON = 34.920556; 
 
-    let stuckTimeout;
+    let globalZmanimData = null;
+    let globalParasha = "";
+    
+    // ניהול זמני המסך: 0 = מציג זמנים (0-60 שניות), 3 = עובר לשעון (60-80 שניות)
+    let tickCounter = 0; 
 
     function formatTime(isoString) {
         if (!isoString) return "-";
@@ -149,7 +152,7 @@
         return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    // המרת מספרים לאותיות גימטריות (תשפ"ו, ט"ו, ט"ז)
+    // המרת מספרים לאותיות גימטריות
     function numToGematria(num, isYear = false) {
         if (!isYear && num === 15) return 'ט"ו';
         if (!isYear && num === 16) return 'ט"ז';
@@ -192,8 +195,10 @@
         return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
     }
 
+    // הצגת נתוני הזמנים במסך
     function displayZmanim(zmanimData) {
-        document.getElementById('alotHaShachar').innerText = formatTime(zmanimData.alotHaShachar);
+        if (!zmanimData) return;
+        document.getElementById('alotHaShachar').innerText = formatTime(zmanimData.alotHaShachar || zmanimData.alot);
         document.getElementById('misheyakir').innerText = formatTime(zmanimData.misheyakir);
         document.getElementById('sunrise').innerText = formatTime(zmanimData.sunrise);
         document.getElementById('sofZmanShmaMGA').innerText = formatTime(zmanimData.sofZmanShmaMGA);
@@ -204,9 +209,7 @@
         document.getElementById('minchaKetana').innerText = formatTime(zmanimData.minchaKetana);
         document.getElementById('plagHaMincha').innerText = formatTime(zmanimData.plagHaMincha);
         document.getElementById('sunset').innerText = formatTime(zmanimData.sunset);
-        
-        // עדכון קריטי: שימוש ב-4.0 מעלות (שווה ל-18 דקות בשוויון) לצאת הכוכבים הרגיל
-        document.getElementById('tzeitHaKochavimRT').innerText = formatTime(zmanimData.tzeitHaKochavim);
+        document.getElementById('tzeitHaKochavimRT').innerText = formatTime(zmanimData.tzeitHaKochavim || zmanimData.tzeit);
     }
 
     function updateHeaderElements(hebrewDateStr, parashaStr) {
@@ -214,92 +217,132 @@
         document.getElementById('gregorian-date').innerText = today.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById('hebrew-date').innerText = hebrewDateStr || getFallbackHebrewDate();
         
-        if (parashaStr) {
-            document.getElementById('parasha-display').innerText = `פרשת השבוע: ${parashaStr}`;
-            document.getElementById('parasha-display').style.display = 'inline-block';
-        } else {
-            document.getElementById('parasha-display').style.display = 'none';
+        const parashaDisplay = document.getElementById('parasha-display');
+        if (parashaDisplay) {
+            if (parashaStr) {
+                parashaDisplay.innerText = `פרשת השבוע: ${parashaStr}`;
+                parashaDisplay.style.display = 'inline-block';
+            } else {
+                parashaDisplay.style.display = 'none';
+            }
+        }
+    }
+
+    // משיכת נתונים משרתי Hebcal ברקע ללא הפרעה לתצוגה
+    async function fetchZmanim() {
+        if (!navigator.onLine) return;
+
+        try {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${dd}`;
+
+            const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}`;
+            const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
+
+            const [zmanimRes, calRes] = await Promise.all([fetch(zmanimUrl), fetch(calendarUrl)]);
+            if (!zmanimRes.ok || !calRes.ok) throw new Error("רשת לא זמינה");
+            
+            const zmanimData = await zmanimRes.json();
+            const calData = await calRes.json();
+            
+            globalZmanimData = zmanimData.times;
+
+            if (calData.items) {
+                const parashaEvent = calData.items.find(item => item.category === "parashat");
+                if (parashaEvent) globalParasha = parashaEvent.hebrew;
+            }
+
+            localStorage.setItem('zmanim_cache', JSON.stringify(globalZmanimData));
+            localStorage.setItem('parasha_cache', globalParasha);
+
+            // עדכון הממשק מיידית רק אם אנחנו כרגע במצב תצוגת לוח (tick 0, 1, 2)
+            if (tickCounter < 3) {
+                displayZmanim(globalZmanimData);
+                updateHeaderElements(getFallbackHebrewDate(), globalParasha);
+            }
+        } catch (error) {
+            console.log("קריאת ה-fetch נכשלה, משתמשים במטמון המקומי.");
         }
     }
 
     function loadCache() {
         const cachedData = localStorage.getItem('zmanim_cache');
-        const cachedHebrewDate = localStorage.getItem('hebrew_date_cache');
         const cachedParasha = localStorage.getItem('parasha_cache');
         
-        if (cachedData) {
-            displayZmanim(JSON.parse(cachedData));
-        }
-        updateHeaderElements(cachedHebrewDate, cachedParasha);
+        if (cachedData) globalZmanimData = JSON.parse(cachedData);
+        if (cachedParasha) globalParasha = cachedParasha;
+
+        updateHeaderElements(getFallbackHebrewDate(), globalParasha);
+        if (globalZmanimData) displayZmanim(globalZmanimData);
+    }
+
+    // ניהול מחזור המערכת - פועל בכל 20 שניות
+    function handleScreenCycle() {
+        const today = new Date();
         
+        const gridElement = document.querySelector('.grid-container') || document.getElementById('zmanim-grid');
+        const headerElement = document.querySelector('.header') || document.getElementById('header-section');
         const statusBox = document.getElementById('status-msg');
-        statusBox.className = "status-box cached-notice";
-        statusBox.innerText = "מציג נתונים שמורים מהקריאה האחרונה.";
-    }
+        const stuckMsg = document.getElementById('stuck-msg');
 
-    async function fetchZmanim() {
-        if (!navigator.onLine) {
-            console.log("המכשיר במצב אופליין. לא מתבצע ניסיון עדכון.");
-            return; 
+        let saverClock = document.getElementById('saver-clock-container');
+        if (!saverClock) {
+            saverClock = document.createElement('div');
+            saverClock.id = 'saver-clock-container';
+            saverClock.style.cssText = "position: absolute; width: 100%; text-align: center; display: none; direction: rtl;";
+            document.body.appendChild(saverClock);
         }
 
-        const statusBox = document.getElementById('status-msg');
-        statusBox.className = "status-box loading";
-        statusBox.innerText = "זוהה חיבור לרשת (Hotspot). מעדכן נתונים בזמן אמת...";
+        // קידום המונה ב-1 (כל פעימה שווה 20 שניות)
+        tickCounter = (tickCounter + 1) % 4; 
 
-        stuckTimeout = setTimeout(() => {
-            document.getElementById('stuck-msg').style.display = 'block';
-            statusBox.className = "status-box cached-notice";
-            statusBox.innerText = "החיבור לרשת איטי. מציג נתונים שמורים.";
-        }, 3500);
+        if (tickCounter === 3) {
+            // --- פעימה 4 (שניות 60 עד 80): שומר מסך למשך 20 שניות ---
+            if (gridElement) gridElement.style.display = 'none';
+            if (headerElement) headerElement.style.display = 'none';
+            if (statusBox) statusBox.style.display = 'none';
+            if (stuckMsg) stuckMsg.style.display = 'none';
 
-        try {
-            const todayStr = new Date().toISOString().split('T');
-            const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}`;
-            const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
+            const currentTime = today.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const currentHebDate = getFallbackHebrewDate();
 
-            const [zmanimRes, calRes] = await Promise.all([fetch(zmanimUrl), fetch(calendarUrl)]);
-            if (!zmanimRes.ok || !calRes.ok) throw new Error("Network error");
+            // הגנה מצריבה: מזיזים את הטקסט אנכית באופן אקראי קל בכל פעם שהוא נדלק
+            const randomPadding = Math.floor(Math.random() * 40) + 20; 
+
+            saverClock.innerHTML = `
+                <div style="margin-top: ${randomPadding}vh;">
+                    <div style="font-size: 8rem; font-weight: bold; color: #38bdf8; font-family: monospace;">${currentTime}</div>
+                    <div style="font-size: 3rem; color: #94a3b8; margin-top: 15px;">${currentHebDate}</div>
+                </div>
+            `;
+            saverClock.style.display = 'block';
+        } else {
+            // --- פעימות 1, 2, 3 (שניות 0 עד 60): הצגת לוח הזמנים המלא למשך דקה ---
+            if (saverClock) saverClock.style.display = 'none';
             
-            const zmanimData = await zmanimRes.json();
-            const calData = await calRes.json();
+            if (gridElement) gridElement.style.display = gridElement.tagName === 'TABLE' ? 'table' : 'grid';
+            if (headerElement) headerElement.style.display = 'block';
             
-            let parashaText = "";
-            if (calData.items) {
-                const parashaEvent = calData.items.find(item => item.category === "parashat");
-                if (parashaEvent) {
-                    parashaText = parashaEvent.hebrew;
-                } else {
-                    const found = calData.items.find(item => item.title_orig && item.title_orig.startsWith("Parashat"));
-                    if (found) parashaText = found.hebrew;
-                }
-            }
-
-            let hebrewDateText = getFallbackHebrewDate(); 
-            
-            localStorage.setItem('zmanim_cache', JSON.stringify(zmanimData.times));
-            localStorage.setItem('hebrew_date_cache', hebrewDateText);
-            if (parashaText) {
-                localStorage.setItem('parasha_cache', parashaText);
-            }
-
-            clearTimeout(stuckTimeout);
-            document.getElementById('stuck-msg').style.display = 'none';
-            statusBox.style.display = 'none'; 
-            
-            displayZmanim(zmanimData.times);
-            updateHeaderElements(hebrewDateText, parashaText || localStorage.getItem('parasha_cache'));
-
-        } catch (error) {
-            clearTimeout(stuckTimeout);
-            console.log("שגיאה במשיכת הנתונים. המערכת נשארת עם המטמון.");
+            // עדכון המידע המוצג בלוח
+            updateHeaderElements(getFallbackHebrewDate(), globalParasha);
+            if (globalZmanimData) displayZmanim(globalZmanimData);
         }
     }
 
+    // --- אתחול ראשוני ---
     loadCache();
     fetchZmanim();
-    window.addEventListener('online', fetchZmanim);
+
+    // קריאת רשת ברקע פעם ב-12 שעות
+    setInterval(fetchZmanim, 43200000);
+
+    // הפעלת לולאת הבדיקה וההחלפה בדיוק כל 20 שניות
+    setInterval(handleScreenCycle, 20000);
 </script>
+
 
 </body>
 </html>
