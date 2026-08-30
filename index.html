@@ -93,7 +93,6 @@
 
     <div id="status-msg" class="status-box">טוען נתונים מעודכנים...</div>
     <div id="stuck-msg" class="status-box" style="display: none; color: #ef4444;">הטעינה ברשת נתקעה. מציג נתונים שמורים.</div>
-
     <script>
         const LAT = 32.393056; 
         const LON = 34.920556; 
@@ -112,27 +111,39 @@
         function numToGematria(num, isYear = false) {
             if (!isYear && num === 15) return 'ט"ו';
             if (!isYear && num === 16) return 'ט"ז';
+            
             const units = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
             const safeTens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
             let parts = [];
-            if (isYear && num >= 700 && num < 800) { parts.push("תש"); num = num - 700; }
+            
+            if (isYear && num >= 700 && num < 800) { 
+                parts.push("תש"); 
+                num = num - 700; 
+            }
+            
             let t = Math.floor(num / 10);
             let u = num % 10;
             if (t > 0) parts.push(safeTens[t]);
             if (u > 0) parts.push(units[u]);
+            
             let str = parts.join("");
             if (str.length > 1) { return str.slice(0, -1) + '"' + str.slice(-1); }
             else if (str.length === 1) { return str + "'"; }
             return str;
         }
-                function getFallbackHebrewDate() {
-            const today = new Date();
-            const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
-            const parts = formatter.formatToParts(today);
-            let dayNum = parseInt(parts.find(p => p.type === 'day').value);
-            let monthStr = parts.find(p => p.type === 'month').value;
-            let yearNum = parseInt(parts.find(p => p.type === 'year').value) % 1000;
-            return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
+
+        function getFallbackHebrewDate() {
+            try {
+                const today = new Date();
+                const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
+                const parts = formatter.formatToParts(today);
+                let dayNum = parseInt(parts.find(p => p.type === 'day').value);
+                let monthStr = parts.find(p => p.type === 'month').value;
+                let yearNum = parseInt(parts.find(p => p.type === 'year').value) % 1000;
+                return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
+            } catch (e) {
+                return "טוען תאריך...";
+            }
         }
 
         function displayZmanim(zmanimData) {
@@ -184,17 +195,21 @@
                 if (!zmanimRes.ok || !calRes.ok) throw new Error("Network error");
                 const zmanimData = await zmanimRes.json();
                 const calData = await calRes.json();
+                
                 globalZmanimData = zmanimData.times;
+
                 if (calData.items) {
                     const parashaEvent = calData.items.find(item => item.category === "parashat");
                     if (parashaEvent) globalParasha = parashaEvent.hebrew;
                 }
+
                 localStorage.setItem('zmanim_cache', JSON.stringify(globalZmanimData));
                 localStorage.setItem('parasha_cache', globalParasha);
-                if (!showImageMode) {
-                    displayZmanim(globalZmanimData);
-                    updateHeaderElements(getFallbackHebrewDate(), globalParasha);
-                }
+
+                // שינוי קריטי: עדכון מיידי על המסך ברגע שהנתונים מגיעים
+                displayZmanim(globalZmanimData);
+                updateHeaderElements(getFallbackHebrewDate(), globalParasha);
+                
                 if (document.getElementById('status-msg')) document.getElementById('status-msg').style.display = 'none';
                 if (document.getElementById('stuck-msg')) document.getElementById('stuck-msg').style.display = 'none';
             } catch (error) {
@@ -251,4 +266,3 @@
     </script>
 </body>
 </html>
-
