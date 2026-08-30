@@ -101,8 +101,6 @@
 
         let globalZmanimData = null;
         let globalParasha = "";
-        
-        // אתחול המצב הראשוני למצב מציג לוח (שלא יפתח בדף ריק)
         let showImageMode = false; 
 
         function formatTime(isoString) {
@@ -127,7 +125,7 @@
             else if (str.length === 1) { return str + "'"; }
             return str;
         }
-        function getFallbackHebrewDate() {
+                function getFallbackHebrewDate() {
             const today = new Date();
             const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
             const parts = formatter.formatToParts(today);
@@ -179,7 +177,6 @@
                 const dd = String(today.getDate()).padStart(2, '0');
                 const todayStr = `${yyyy}-${mm}-${dd}`;
                 
-                // תיקון הכתובות עם סימני דולר וסלאש תקינים
                 const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}&date=${todayStr}`;
                 const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
                 
@@ -228,7 +225,6 @@
                 document.body.appendChild(saverContainer);
             }
             
-            // היפוך המצב בצורה מבוקרת
             showImageMode = !showImageMode; 
             
             if (showImageMode) {
@@ -247,13 +243,12 @@
             }
         }
 
-        // טעינה ראשונית ישירה של הנתונים כדי למנוע דף ריק על ההתחלה
         loadCache();
         fetchZmanim();
         
-        // הפעלת מחזורי הזמן
         setInterval(fetchZmanim, 43200000); 
         setInterval(handleScreenCycle, 30000); 
     </script>
 </body>
 </html>
+
