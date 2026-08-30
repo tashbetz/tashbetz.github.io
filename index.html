@@ -1,150 +1,15 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>זמני היום בהלכה ופרשת השבוע</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .zmanim-container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-            overflow: hidden;
-        }
-        .zmanim-header {
-            background-color: #2c3e50;
-            color: #ffffff;
-            padding: 20px;
-            text-align: center;
-        }
-        .zmanim-header h1 {
-            margin: 0;
-            font-size: 22px;
-        }
-        .parasha-box {
-            background-color: #16a085;
-            color: white;
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 8px;
-            font-weight: bold;
-        }
-        .date-box {
-            margin-top: 10px;
-            font-size: 15px;
-            opacity: 0.95;
-            line-height: 1.4;
-        }
-        .zmanim-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .zmanim-table tr {
-            border-bottom: 1px solid #eef2f5;
-        }
-        .zmanim-table tr:last-child {
-            border-bottom: none;
-        }
-        .zmanim-table tr:nth-child(even) {
-            background-color: #f9fbfd;
-        }
-        .zmanim-table td {
-            padding: 14px 20px;
-            font-size: 16px;
-            color: #333333;
-        }
-        .zmanim-title {
-            font-weight: bold;
-            text-align: right;
-        }
-        .zmanim-time {
-            text-align: left;
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-            color: #2980b9;
-        }
-        .status-box {
-            padding: 12px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .loading {
-            background-color: #e1f5fe;
-            color: #0288d1;
-        }
-        .cached-notice {
-            background-color: #fff3e0;
-            color: #e65100;
-            font-size: 13px;
-        }
-        .stuck-warning {
-            background-color: #ffebee;
-            color: #c62828;
-            border-top: 2px dashed #e53935;
-            display: none;
-        }
-        .stuck-warning a {
-            color: #b71c1c;
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-
-<div class="zmanim-container">
-    <div class="zmanim-header">
-        <h1>זמני היום בהלכה לפי אופק כפר הרא"ה </h1>
-        <div id="parasha-display" class="parasha-box">פרשת השבוע: טוען...</div>
-        <div class="date-box">
-            <div id="gregorian-date">טוען תאריך לועזי...</div>
-            <div id="hebrew-date" style="font-weight: bold; color: #f1c40f;">טוען תאריך עברי...</div>
-        </div>
-    </div>
-    
-    <div id="status-msg" class="status-box loading">טוען נתונים מעודכנים...</div>
-    
-    <div id="stuck-msg" class="status-box stuck-warning">
-        הטעינה ברשת נתקעה. מציג נתונים שמורים. 
-        <a href="javascript:window.location.reload();">נסה לרענן</a>.
-    </div>
-
-    <table class="zmanim-table" id="zmanim-table">
-        <tr><td class="zmanim-title">עלות השחר</td><td class="zmanim-time" id="alotHaShachar">-</td></tr>
-        <tr><td class="zmanim-title">משיכיר (טלית ותפילין)</td><td class="zmanim-time" id="misheyakir">-</td></tr>
-        <tr><td class="zmanim-title">הנץ החמה (זריחה)</td><td class="zmanim-time" id="sunrise">-</td></tr>
-        <tr><td class="zmanim-title">סוף זמן ק"ש (מג"א)</td><td class="zmanim-time" id="sofZmanShmaMGA">-</td></tr>
-        <tr><td class="zmanim-title">סוף זמן ק"ש (גר"א)</td><td class="zmanim-time" id="sofZmanShma">-</td></tr>
-        <tr><td class="zmanim-title">סוף זמן תפילה (גר"א)</td><td class="zmanim-time" id="sofZmanTfilla">-</td></tr>
-        <tr><td class="zmanim-title">חצות היום</td><td class="zmanim-time" id="chatzot">-</td></tr>
-        <tr><td class="zmanim-title">מנחה גדולה</td><td class="zmanim-time" id="minchaGedola">-</td></tr>
-        <tr><td class="zmanim-title">מנחה קטנה</td><td class="zmanim-time" id="minchaKetana">-</td></tr>
-        <tr><td class="zmanim-title">פלג המנחה</td><td class="zmanim-time" id="plagHaMincha">-</td></tr>
-        <tr><td class="zmanim-title">שקיעת החמה</td><td class="zmanim-time" id="sunset">-</td></tr>
-        <tr><td class="zmanim-title">צאת הכוכבים</td><td class="zmanim-time" id="tzeitHaKochavimRT">-</td></tr>
-    </table>
-</div>
 <script>
     const LAT = 32.393056; 
     const LON = 34.920556; 
 
+    // הגדר כאן את שם קובץ התמונה שהעלית ל-GitHub (למשל: ad.jpg)
+    const SAVER_IMAGE_URL = "ad.jpg"; 
+
     let globalZmanimData = null;
     let globalParasha = "";
     
-    // Cycle management: 0, 1, 2 = Displaying board (60s) | 3 = Screen saver (20s)
-    let tickCounter = 0; 
+    // false = מציג לוח זמנים | true = מציג תמונה
+    let showImageMode = false; 
 
     function formatTime(isoString) {
         if (!isoString || isoString === "-") return "-";
@@ -152,14 +17,13 @@
         return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    // Convert numbers to Hebrew Gematria letters (e.g., תשפ"ו, ט"ו, ט"ז)
+    // המרת מספרים לאותיות גימטריות (תשפ"ו, ט"ו, ט"ז)
     function numToGematria(num, isYear = false) {
         if (!isYear && num === 15) return 'ט"ו';
         if (!isYear && num === 16) return 'ט"ז';
         
         const units = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
         const safeTens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
-        
         let parts = [];
         
         if (isYear && num >= 700 && num < 800) {
@@ -182,7 +46,7 @@
         return str;
     }
 
-    // Completely offline local Hebrew date parsing
+    // הפקת תאריך עברי אופליין לחלוטין מתוך מערכת המכשיר
     function getFallbackHebrewDate() {
         const today = new Date();
         const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -195,40 +59,48 @@
         return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
     }
 
-    // Populates data to your original HTML element IDs
+    // מילוי הנתונים בטבלה בצורה בטוחה שתואמת את ה-IDs באתר שלך
     function displayZmanim(zmanimData) {
         if (!zmanimData) return;
-        document.getElementById('alotHaShachar').innerText = formatTime(zmanimData.alotHaShachar || zmanimData.alotDawn);
-        document.getElementById('misheyakir').innerText = formatTime(zmanimData.misheyakir);
-        document.getElementById('sunrise').innerText = formatTime(zmanimData.sunrise);
-        document.getElementById('sofZmanShmaMGA').innerText = formatTime(zmanimData.sofZmanShmaMGA || zmanimData.sofZmanShmaMagenAvraham);
-        document.getElementById('sofZmanShma').innerText = formatTime(zmanimData.sofZmanShma || zmanimData.sofZmanShmaGra);
-        document.getElementById('sofZmanTfilla').innerText = formatTime(zmanimData.sofZmanTfilla || zmanimData.sofZmanTfillaGra);
-        document.getElementById('chatzot').innerText = formatTime(zmanimData.chatzot);
-        document.getElementById('minchaGedola').innerText = formatTime(zmanimData.minchaGedola);
-        document.getElementById('minchaKetana').innerText = formatTime(zmanimData.minchaKetana);
-        document.getElementById('plagHaMincha').innerText = formatTime(zmanimData.plagHaMincha || zmanimData.plagHamincha);
-        document.getElementById('sunset').innerText = formatTime(zmanimData.sunset);
-        document.getElementById('tzeitHaKochavimRT').innerText = formatTime(zmanimData.tzeitHaKochavim || zmanimData.tzeit85deg);
-    }
+        
+        const setTime = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = formatTime(val);
+        };
 
+        setTime('alotHaShachar', zmanimData.alotDawn || zmanimData.alotHaShachar);
+        setTime('misheyakir', zmanimData.misheyakir);
+        setTime('sunrise', zmanimData.sunrise);
+        setTime('sofZmanShmaMGA', zmanimData.sofZmanShmaMagenAvraham || zmanimData.sofZmanShmaMGA);
+        setTime('sofZmanShma', zmanimData.sofZmanShmaGra || zmanimData.sofZmanShma);
+        setTime('sofZmanTfilla', zmanimData.sofZmanTfillaGra || zmanimData.sofZmanTfilla);
+        setTime('chatzot', zmanimData.chatzot);
+        setTime('minchaGedola', zmanimData.minchaGedola);
+        setTime('minchaKetana', zmanimData.minchaKetana);
+        setTime('plagHaMincha', zmanimData.plagHamincha || zmanimData.plagHaMincha);
+        setTime('sunset', zmanimData.sunset);
+        setTime('tzeitHaKochavimRT', zmanimData.tzeit85deg || zmanimData.tzeitHaKochavim || zmanimData.tzeit);
+    }
     function updateHeaderElements(hebrewDateStr, parashaStr) {
         const today = new Date();
-        document.getElementById('gregorian-date').innerText = today.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('hebrew-date').innerText = hebrewDateStr || getFallbackHebrewDate();
+        const gregElem = document.getElementById('gregorian-date') || document.getElementById('secular-date');
+        const hebElem = document.getElementById('hebrew-date');
+        const parashaElem = document.getElementById('parasha-display');
+
+        if (gregElem) gregElem.innerText = today.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        if (hebElem) hebElem.innerText = hebrewDateStr || getFallbackHebrewDate();
         
-        const parashaDisplay = document.getElementById('parasha-display');
-        if (parashaDisplay) {
+        if (parashaElem) {
             if (parashaStr) {
-                parashaDisplay.innerText = `פרשת השבוע: ${parashaStr}`;
-                parashaDisplay.style.display = 'inline-block';
+                parashaElem.innerText = `פרשת השבוע: ${parashaStr}`;
+                parashaElem.style.display = 'inline-block';
             } else {
-                parashaDisplay.style.display = 'none';
+                parashaElem.style.display = 'none';
             }
         }
     }
 
-    // Fixed background fetch with correctly structured API links
+    // פונקציית ה-Fetch המתוקנת עם כתובות תקינות לחלוטין לשרת
     async function fetchZmanim() {
         if (!navigator.onLine) return;
 
@@ -239,7 +111,7 @@
             const dd = String(today.getDate()).padStart(2, '0');
             const todayStr = `${yyyy}-${mm}-${dd}`;
 
-            // Fixed endpoint mappings
+            // הכתובות תוקנו עם סלאש וסימני דולר נכונים למניעת קריסה
             const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}&date=${todayStr}`;
             const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
 
@@ -259,15 +131,16 @@
             localStorage.setItem('zmanim_cache', JSON.stringify(globalZmanimData));
             localStorage.setItem('parasha_cache', globalParasha);
 
-            if (tickCounter < 3) {
+            if (!showImageMode) {
                 displayZmanim(globalZmanimData);
                 updateHeaderElements(getFallbackHebrewDate(), globalParasha);
             }
             
-            const statusBox = document.getElementById('status-msg');
-            if (statusBox) statusBox.style.display = 'none';
+            // הסתרת הודעות שגיאה וטעינה במידה והצלחנו
+            if (document.getElementById('status-msg')) document.getElementById('status-msg').style.display = 'none';
+            if (document.getElementById('stuck-msg')) document.getElementById('stuck-msg').style.display = 'none';
         } catch (error) {
-            console.log("Fetch failed, running on saved cache.");
+            console.log("Fetch failed, running on saved cache.", error);
         }
     }
 
@@ -282,64 +155,52 @@
         if (globalZmanimData) displayZmanim(globalZmanimData);
     }
 
+    // מנגנון מחזור החלפת המסכים - בדיוק כל 30 שניות
     function handleScreenCycle() {
-        const today = new Date();
-        
-        const gridElement = document.querySelector('.grid-container') || document.getElementById('zmanim-grid');
-        const headerElement = document.querySelector('.header') || document.getElementById('header-section');
+        const gridElement = document.querySelector('.grid-container') || document.getElementById('zmanim-grid') || document.querySelector('table');
+        const headerElement = document.querySelector('.header') || document.getElementById('header-section') || document.querySelector('h1')?.parentElement;
         const statusBox = document.getElementById('status-msg');
         const stuckMsg = document.getElementById('stuck-msg');
 
-        let saverClock = document.getElementById('saver-clock-container');
-        if (!saverClock) {
-            saverClock = document.createElement('div');
-            saverClock.id = 'saver-clock-container';
-            saverClock.style.cssText = "position: absolute; width: 100%; text-align: center; display: none; direction: rtl;";
-            document.body.appendChild(saverClock);
+        let saverContainer = document.getElementById('saver-image-container');
+        if (!saverContainer) {
+            saverContainer = document.createElement('div');
+            saverContainer.id = 'saver-image-container';
+            saverContainer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; z-index: 99999; background-color: #000000; overflow: hidden;";
+            document.body.appendChild(saverContainer);
         }
 
-        tickCounter = (tickCounter + 1) % 4; 
+        showImageMode = !showImageMode; 
 
-        if (tickCounter === 3) {
-            // --- Screen Saver Mode (Seconds 60 to 80) ---
-            if (gridElement) gridElement.style.display = 'none';
-            if (headerElement) headerElement.style.display = 'none';
+        if (showImageMode) {
+            // --- 30 שניות של מודעה/תמונה בגודל מלא ---
+            if (gridElement) gridElement.style.setProperty('display', 'none', 'important');
+            if (headerElement) headerElement.style.setProperty('display', 'none', 'important');
             if (statusBox) statusBox.style.display = 'none';
             if (stuckMsg) stuckMsg.style.display = 'none';
 
-            const currentTime = today.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
-            const currentHebDate = getFallbackHebrewDate();
-
-            const randomPadding = Math.floor(Math.random() * 40) + 20; 
-
-            saverClock.innerHTML = `
-                <div style="margin-top: ${randomPadding}vh;">
-                    <div style="font-size: 8rem; font-weight: bold; color: #38bdf8; font-family: monospace;">${currentTime}</div>
-                    <div style="font-size: 3rem; color: #94a3b8; margin-top: 15px;">${currentHebDate}</div>
-                </div>
+            saverContainer.innerHTML = `
+                <img src="${SAVER_IMAGE_URL}" style="width: 100%; height: 100%; object-fit: contain; display: block;" />
             `;
-            saverClock.style.display = 'block';
+            saverContainer.style.setProperty('display', 'block', 'important');
         } else {
-            // --- Standard Board Mode (Seconds 0 to 60) ---
-            if (saverClock) saverClock.style.display = 'none';
-            
-            if (gridElement) gridElement.style.display = gridElement.tagName === 'TABLE' ? 'table' : 'grid';
-            if (headerElement) headerElement.style.display = 'block';
+            // --- 30 שניות של לוח זמני הלכה מלא ---
+            if (saverContainer) saverContainer.style.setProperty('display', 'none', 'important');
+            if (gridElement) gridElement.style.setProperty('display', gridElement.tagName === 'TABLE' ? 'table' : 'grid', 'important');
+            if (headerElement) headerElement.style.setProperty('display', 'block', 'important');
             
             updateHeaderElements(getFallbackHebrewDate(), globalParasha);
             if (globalZmanimData) displayZmanim(globalZmanimData);
         }
     }
 
-    // --- Init ---
+    // --- אתחול מערכת ---
     loadCache();
     fetchZmanim();
 
-    setInterval(fetchZmanim, 43200000);
-    setInterval(handleScreenCycle, 20000);
+    setInterval(fetchZmanim, 43200000); // קריאת API ברקע כל 12 שעות
+    setInterval(handleScreenCycle, 30000); // החלפת מצב מסך בדיוק כל 30 שניות (30000 מילישניות)
 </script>
-
 
 </body>
 </html>
-
