@@ -123,6 +123,28 @@
         font-size: 0.92rem;
       }
 
+      .ad-panel {
+        display: none;
+        margin-top: 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+
+      .ad-panel img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .content.is-ad-view table {
+        display: none;
+      }
+
+      .content.is-ad-view .ad-panel {
+        display: block;
+      }
+
       @media (max-width: 640px) {
         .page { padding: 14px; }
         .header, .stats, .content { padding-left: 16px; padding-right: 16px; }
@@ -167,6 +189,10 @@
             </thead>
             <tbody id="zmanimTable"></tbody>
           </table>
+
+          <div id="adPanel" class="ad-panel">
+            <img src="ad1.jpg" alt="ad" />
+          </div>
 
           <div class="footnote">הזמנים מחושבים לפי מיקום כפר הרא"ה, ונמסרים בתצוגה עברית.</div>
         </div>
@@ -294,6 +320,7 @@
           ['סוף זמן קריאת שמע (גר"א)', zmanim.sofZmanShma()],
           ['סוף זמן תפילה (מג"א)', zmanim.sofZmanTfillaMGA()],
           ['סוף זמן תפילה (גר"א)', zmanim.sofZmanTfilla()],
+          ['חצות היום', zmanim.chatzot()],
           ['שקיעה', zmanim.sunset()],
           ['צאת הכוכבים (4.8°)', zmanim.timeAtAngle(4.8, false)],
         ];
@@ -304,8 +331,17 @@
           .join('');
       }
 
+      const content = document.querySelector('.content');
+      let showAd = false;
+      function toggleAdView() {
+        showAd = !showAd;
+        if (!content) return;
+        content.classList.toggle('is-ad-view', showAd);
+      }
+
       update();
       setInterval(update, 1000);
+      setInterval(toggleAdView, 20000);
     </script>
   </body>
 </html>
