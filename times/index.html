@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>זמני היום בהלכה ופרשת השבוע</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .zmanim-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .zmanim-header {
+            background-color: #2c3e50;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .zmanim-header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+        .parasha-box {
+            background-color: #16a085;
+            color: white;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+        .date-box {
+            margin-top: 10px;
+            font-size: 15px;
+            opacity: 0.95;
+            line-height: 1.4;
+        }
+        .zmanim-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .zmanim-table tr {
+            border-bottom: 1px solid #eef2f5;
+        }
+        .zmanim-table tr:last-child {
+            border-bottom: none;
+        }
+        .zmanim-table tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+        .zmanim-table td {
+            padding: 14px 20px;
+            font-size: 16px;
+            color: #333333;
+        }
+        .zmanim-title {
+            font-weight: bold;
+            text-align: right;
+        }
+        .zmanim-time {
+            text-align: left;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .status-box {
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .loading {
+            background-color: #e1f5fe;
+            color: #0288d1;
+        }
+        .cached-notice {
+            background-color: #fff3e0;
+            color: #e65100;
+            font-size: 13px;
+        }
+        .stuck-warning {
+            background-color: #ffebee;
+            color: #c62828;
+            border-top: 2px dashed #e53935;
+            display: none;
+        }
+        .stuck-warning a {
+            color: #b71c1c;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="zmanim-container">
+    <div class="zmanim-header">
+        <h1>זמני היום בהלכה</h1>
+        <div id="parasha-display" class="parasha-box">פרשת השבוע: טוען...</div>
+        <div class="date-box">
+            <div id="gregorian-date">טוען תאריך לועזי...</div>
+            <div id="hebrew-date" style="font-weight: bold; color: #f1c40f;">טוען תאריך עברי...</div>
+        </div>
+    </div>
+    
+    <div id="status-msg" class="status-box loading">טוען נתונים מעודכנים...</div>
+    
+    <div id="stuck-msg" class="status-box stuck-warning">
+        הטעינה ברשת נתקעה. מציג נתונים שמורים. 
+        <a href="javascript:window.location.reload();">נסה לרענן</a>.
+    </div>
+
+    <table class="zmanim-table" id="zmanim-table">
+        <tr><td class="zmanim-title">עלות השחר</td><td class="zmanim-time" id="alotHaShachar">-</td></tr>
+        <tr><td class="zmanim-title">משיכיר (טלית ותפילין)</td><td class="zmanim-time" id="misheyakir">-</td></tr>
+        <tr><td class="zmanim-title">הנץ החמה (זריחה)</td><td class="zmanim-time" id="sunrise">-</td></tr>
+        <tr><td class="zmanim-title">סוף זמן ק"ש (מג"א)</td><td class="zmanim-time" id="sofZmanShmaMGA">-</td></tr>
+        <tr><td class="zmanim-title">סוף זמן ק"ש (גר"א)</td><td class="zmanim-time" id="sofZmanShma">-</td></tr>
+        <tr><td class="zmanim-title">סוף זמן תפילה (גר"א)</td><td class="zmanim-time" id="sofZmanTfilla">-</td></tr>
+        <tr><td class="zmanim-title">חצות היום</td><td class="zmanim-time" id="chatzot">-</td></tr>
+        <tr><td class="zmanim-title">מנחה גדולה</td><td class="zmanim-time" id="minchaGedola">-</td></tr>
+        <tr><td class="zmanim-title">מנחה קטנה</td><td class="zmanim-time" id="minchaKetana">-</td></tr>
+        <tr><td class="zmanim-title">פלג המנחה</td><td class="zmanim-time" id="plagHaMincha">-</td></tr>
+        <tr><td class="zmanim-title">שקיעת החמה</td><td class="zmanim-time" id="sunset">-</td></tr>
+        <tr><td class="zmanim-title">צאת הכוכבים (ר"ת)</td><td class="zmanim-time" id="tzeitHaKochavimRT">-</td></tr>
+    </table>
+</div>
+
+
+
+<script>
+    const LAT = 32.393056; 
+    const LON = 34.920556; 
+
+    // טיימר אזהרה במידה והשרת לא עונה תוך 3.5 שניות
+    const stuckTimeout = setTimeout(() => {
+        document.getElementById('stuck-msg').style.display = 'block';
+        const statusBox = document.getElementById('status-msg');
+        if(localStorage.getItem('zmanim_cache')) {
+            statusBox.className = "status-box cached-notice";
+            statusBox.innerText = "שגיאת רשת. מציג זמנים שמורים מהקריאה האחרונה.";
+        }
+    }, 3500);
+
+    function formatTime(isoString) {
+        if (!isoString) return "-";
+        const date = new Date(isoString);
+        return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    // המרת מספרים לאותיות גימטריות מדויקות (כולל יצירה תקינה של תשפ"ו, ט"ו, ט"ז)
+    function numToGematria(num, isYear = false) {
+        if (!isYear && num === 15) return 'ט"ו';
+        if (!isYear && num === 16) return 'ט"ז';
+        
+        const units = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
+        const tens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
+        
+        let parts = [];
+        
+        if (isYear && num >= 700 && num < 800) {
+            parts.push("תש"); // הוספת ת"ש (700) ישירות לשנים הנוכחיות במאה הזו
+            num = num - 700;
+        }
+        
+        let t = Math.floor(num / 10);
+        let u = num % 10;
+        
+        if (t > 0) parts.push(tens[t]);
+        if (u > 0) parts.push(units[u]);
+        
+        let str = parts.join("");
+        if (str.length > 1) {
+            return str.slice(0, -1) + '"' + str.slice(-1);
+        } else if (str.length === 1) {
+            return str + "'";
+        }
+        return str;
+    }
+
+    // יצירת תאריך עברי מקומי תקין ומלא באותיות
+    function getFallbackHebrewDate() {
+        const today = new Date();
+        const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
+        const parts = formatter.formatToParts(today);
+        
+        let dayNum = parseInt(parts.find(p => p.type === 'day').value);
+        let monthStr = parts.find(p => p.type === 'month').value;
+        let yearNum = parseInt(parts.find(p => p.type === 'year').value) % 1000; // מחזיר 786
+
+        return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
+    }
+
+    function displayZmanim(zmanimData) {
+        document.getElementById('alotHaShachar').innerText = formatTime(zmanimData.alotHaShachar);
+        document.getElementById('misheyakir').innerText = formatTime(zmanimData.misheyakir);
+        document.getElementById('sunrise').innerText = formatTime(zmanimData.sunrise);
+        document.getElementById('sofZmanShmaMGA').innerText = formatTime(zmanimData.sofZmanShmaMGA);
+        document.getElementById('sofZmanShma').innerText = formatTime(zmanimData.sofZmanShma);
+        document.getElementById('sofZmanTfilla').innerText = formatTime(zmanimData.sofZmanTfilla);
+        document.getElementById('chatzot').innerText = formatTime(zmanimData.chatzot);
+        document.getElementById('minchaGedola').innerText = formatTime(zmanimData.minchaGedola);
+        document.getElementById('minchaKetana').innerText = formatTime(zmanimData.minchaKetana);
+        document.getElementById('plagHaMincha').innerText = formatTime(zmanimData.plagHaMincha);
+        document.getElementById('sunset').innerText = formatTime(zmanimData.sunset);
+        document.getElementById('tzeitHaKochavimRT').innerText = formatTime(zmanimData.tzeitHaKochavimRT);
+    }
+
+    function updateHeaderElements(hebrewDateStr, parashaStr) {
+        const today = new Date();
+        document.getElementById('gregorian-date').innerText = today.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('hebrew-date').innerText = hebrewDateStr || getFallbackHebrewDate();
+        
+        if (parashaStr) {
+            document.getElementById('parasha-display').innerText = `פרשת השבוע: ${parashaStr}`;
+            document.getElementById('parasha-display').style.display = 'inline-block';
+        } else {
+            document.getElementById('parasha-display').style.display = 'none';
+        }
+    }
+
+    function loadCache() {
+        const cachedData = localStorage.getItem('zmanim_cache');
+        const cachedHebrewDate = localStorage.getItem('hebrew_date_cache');
+        const cachedParasha = localStorage.getItem('parasha_cache');
+        
+        if (cachedData) {
+            displayZmanim(JSON.parse(cachedData));
+            document.getElementById('status-msg').className = "status-box cached-notice";
+            document.getElementById('status-msg').innerText = "מציג זמנים שמורים (מעדכן מהרשת...)";
+        }
+        updateHeaderElements(cachedHebrewDate, cachedParasha);
+    }
+
+    async function fetchZmanim() {
+        try {
+            const todayStr = new Date().toISOString().split('T');
+            const zmanimUrl = `https://hebcal.com{LAT}&longitude=${LON}`;
+            const calendarUrl = `https://hebcal.com{todayStr}&end=${todayStr}&il=1&s=1`;
+
+            const [zmanimRes, calRes] = await Promise.all([fetch(zmanimUrl), fetch(calendarUrl)]);
+            if (!zmanimRes.ok || !calRes.ok) throw new Error("Network error");
+            
+            const zmanimData = await zmanimRes.json();
+            const calData = await calRes.json();
+            
+            let parashaText = "";
+            if (calData.items) {
+                const parashaEvent = calData.items.find(item => item.category === "parashat");
+                if (parashaEvent) {
+                    parashaText = parashaEvent.hebrew;
+                } else {
+                    const found = calData.items.find(item => item.title_orig && item.title_orig.startsWith("Parashat"));
+                    if (found) parashaText = found.hebrew;
+                }
+            }
+
+            let hebrewDateText = getFallbackHebrewDate(); 
+            
+            localStorage.setItem('zmanim_cache', JSON.stringify(zmanimData.times));
+            localStorage.setItem('hebrew_date_cache', hebrewDateText);
+            if (parashaText) {
+                localStorage.setItem('parasha_cache', parashaText);
+            }
+
+            clearTimeout(stuckTimeout);
+            document.getElementById('stuck-msg').style.display = 'none';
+            document.getElementById('status-msg').style.display = 'none';
+            
+            displayZmanim(zmanimData.times);
+            updateHeaderElements(hebrewDateText, parashaText || localStorage.getItem('parasha_cache'));
+
+        } catch (error) {
+            console.log("בעיה בעדכון מהרשת, מציג זיכרון מקומי.", error);
+        }
+    }
+
+    loadCache();
+    fetchZmanim();
+</script>
+
+</body>
+</html>
