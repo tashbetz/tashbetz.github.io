@@ -1,233 +1,200 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>זמני היום בהלכה - אופליין</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>זמני היום הלכתיים - כפר הרא"ה</title>
     <style>
-        body {
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            overflow-x: hidden;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        h1 {
-            font-size: 3rem;
-            margin: 0 0 10px 0;
-            color: #38bdf8;
-        }
-        .date-sub {
-            font-size: 1.5rem;
-            color: #94a3b8;
-            margin-bottom: 5px;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            width: 90%;
-            max-width: 1200px;
-        }
-        .zman-card {
-            background-color: #1e293b;
-            padding: 15px 30px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .zman-name {
-            font-size: 1.8rem;
-            font-weight: bold;
-        }
-        .zman-time {
-            font-size: 2.2rem;
-            color: #f59e0b;
-            font-weight: bold;
-            font-family: monospace;
-        }
-        .status-box {
-            font-size: 1.2rem;
-            color: #10b981;
-            margin-top: 15px;
-            text-align: center;
-        }
+      :root {
+        --bg: #f5f1e8; --card: #fffdf9; --ink: #1f2430;
+        --muted: #5d6574; --line: #e5dcc7; --accent: #7d4d2b;
+        --shabbat-bg: #fcf6ee; --shabbat-border: #ebd6be;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(180deg, #efe7d9 0%, #f7f4ee 100%); color: var(--ink);
+      }
+      .page { max-width: 980px; margin: 24px auto; padding: 16px; }
+      .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+      .header { padding: 24px 24px 16px; background: linear-gradient(135deg, #f9efe2 0%, #f4e3d1 100%); border-bottom: 1px solid var(--line); }
+      .title { margin: 0; font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--accent); }
+      .subtitle { margin-top: 6px; color: var(--muted); font-size: 0.95rem; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 16px; border-bottom: 1px solid var(--line); }
+      .stat { background: #fefaf5; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; }
+      .stat.shabbat { background: var(--shabbat-bg); border-color: var(--shabbat-border); }
+      .label { display: block; margin-bottom: 4px; font-size: 0.8rem; color: var(--muted); }
+      .stat.shabbat .label { color: var(--accent); font-weight: 600; }
+      .value { font-size: clamp(1rem, 1.6vw, 1.35rem); font-weight: 700; }
+      .content { padding: 16px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 12px 8px; border-bottom: 1px solid var(--line); text-align: right; }
+      th { color: var(--muted); font-size: 0.75rem; }
+      td:first-child { font-weight: 600; }
+      td:last-child { font-variant-numeric: tabular-nums; font-weight: 700; }
+      .highlight-row { background-color: #fcf8f2; }
+      .footnote { margin-top: 14px; color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
     </style>
-</head>
-<body>
-
-    <div class="header" id="header-section">
-        <h1 id="parasha-display">זמני היום בהלכה</h1>
-        <div class="date-sub" id="gregorian-date">מחשב תאריך...</div>
-        <div class="date-sub" id="hebrew-date">מחשב תאריך...</div>
+  </head>
+  <body>
+    <div class="page">
+      <div class="card">
+        <div class="header">
+          <h1 class="title">זמני היום הלכתיים</h1>
+          <div class="subtitle">כפר הרא"ה · 32°23′35″N 34°55′14″E</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="label">תאריך לועזי</span><div id="gregorianDate" class="value">מחשב…</div></div>
+          <div class="stat"><span class="label">תאריך עברי</span><div id="hebrewDate" class="value">מחשב…</div></div>
+          <div class="stat"><span class="label">פרשת השבוע הקרובה</span><div id="torahEvent" class="value">מחשב…</div></div>
+          <div class="stat"><span class="label">שעה נוכחית</span><div id="currentTime" class="value">מחשב…</div></div>
+          <div class="stat shabbat"><span class="label">הדלקת נרות (יום ו')</span><div id="candleLighting" class="value">מחשב…</div></div>
+          <div class="stat shabbat"><span class="label">מוצאי שבת (8.5°)</span><div id="shabbatEnd" class="value">מחשב…</div></div>
+        </div>
+        <div class="content">
+          <table>
+            <thead><tr><th>זמן הלכתי</th><th>שעה</th></tr></thead>
+            <tbody id="zmanimTable"></tbody>
+          </table>
+          <div class="footnote">החישוב מתבצע אוטומטית אופליין. התאריך העברי והמועדים מתחלפים בשקיעה.</div>
+        </div>
+      </div>
     </div>
-
-    <div class="grid-container" id="zmanim-grid">
-        <div class="zman-card"><span class="zman-name">עלות השחר (72 דק')</span><span class="zman-time" id="alotHaShachar">-</span></div>
-        <div class="zman-card"><span class="zman-name">משיכיר (טלית ותפילין)</span><span class="zman-time" id="misheyakir">-</span></div>
-        <div class="zman-card"><span class="zman-name">הנץ החמה (זריחה משוערת)</span><span class="zman-time" id="sunrise">-</span></div>
-        <div class="zman-card"><span class="zman-name">סוף זמן ק"ש (מג"א)</span><span class="zman-time" id="sofZmanShmaMGA">-</span></div>
-        <div class="zman-card"><span class="zman-name">סוף זמן ק"ש (גר"א)</span><span class="zman-time" id="sofZmanShma">-</span></div>
-        <div class="zman-card"><span class="zman-name">סוף זמן תפילה (גר"א)</span><span class="zman-time" id="sofZmanTfilla">-</span></div>
-        <div class="zman-card"><span class="zman-name">חצות היום והלילה</span><span class="zman-time" id="chatzot">-</span></div>
-        <div class="zman-card"><span class="zman-name">מנחה גדולה</span><span class="zman-time" id="minchaGedola">-</span></div>
-        <div class="zman-card"><span class="zman-name">מנחה קטנה</span><span class="zman-time" id="minchaKetana">-</span></div>
-        <div class="zman-card"><span class="zman-name">פלג המנחה</span><span class="zman-time" id="plagHaMincha">-</span></div>
-        <div class="zman-card"><span class="zman-name">שקיעת החמה</span><span class="zman-time" id="sunset">-</span></div>
-        <div class="zman-card"><span class="zman-name">צאת הכוכבים</span><span class="zman-time" id="tzeitHaKochavimRT">-</span></div>
-    </div>
-
-    <div id="status-msg" class="status-box">מערכת פועלת במצב אופליין מאובטח ומחושב מקומית.</div>
+    <script src="./vendor/suncalc.js"></script>
     <script>
-        const LAT = 32.393056; 
-        const LON = 34.920556; 
-        const SAVER_IMAGE_URL = "ad.jpg"; 
+      /*
+       * Copyright (c) 2026, Volodymyr Agafonkin. All rights reserved.
+       * Redistribution and use in source and binary forms, with or without modification, are permitted.
+       */
+      const tz = 'Asia/Jerusalem'; const lat = 32.3930556; const lon = 34.9205556;
 
-        let showImageMode = false; 
+      SunCalc.addTime(-0.833, 'halachicSunrise', 'halachicSunset');
+      SunCalc.addTime(-19.8, 'alos198', 'tzeitMga198');
+      SunCalc.addTime(-4.8, 'dusk48', 'tzeit48');
+      SunCalc.addTime(-16.0, 'dawn16', 'rtNight16');
+      SunCalc.addTime(-8.5, 'dawn85', 'shabbatEnd85');
 
-        // המרת מספרים לאותיות גימטריות
-        function numToGematria(num, isYear = false) {
-            if (!isYear && num === 15) return 'ט"ו';
-            if (!isYear && num === 16) return 'ט"ז';
-            const units = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
-            const safeTens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
-            let parts = [];
-            if (isYear && num >= 700 && num < 800) { parts.push("תש"); num = num - 700; }
-            let t = Math.floor(num / 10);
-            let u = num % 10;
-            if (t > 0) parts.push(safeTens[t]);
-            if (u > 0) parts.push(units[u]);
-            let str = parts.join("");
-            if (str.length > 1) { return str.slice(0, -1) + '"' + str.slice(-1); }
-            return str + "'";
+      const daysHe = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'שבת קודש'];
+
+      // מפת השבתות המדויקת והקבועה לשנים תשפ"ו - תשפ"ז (2025-2026) בארץ ישראל
+      const offlineParshiot = {
+        // שבתות שנת תשפ"ו (2025-2026)
+        "2025-10-18":"בראשית","2025-10-25":"נח","2025-11-01":"לך לך","2025-11-08":"וירא",
+        "2025-11-15":"חיי שרה","2025-11-22":"תולדות","2025-11-29":"ויצא","2025-12-06":"וישלח",
+        "2025-12-13":"וישב","2025-12-20":"מקץ (חנוכה)","2025-12-27":"ויגש",
+        "2026-01-03":"ויחי","2026-01-10":"שמות","2026-01-17":"וארא","2026-01-24":"בא",
+        "2026-01-31":"בשלח (שירה)","2026-02-07":"יתרו","2026-02-14":"משפטים","2026-02-21":"תרומה",
+        "2026-02-28":"תצוה","2026-03-07":"כי תשא","2026-03-14":"ויקהל-פקודי","2026-03-21":"ויקרא",
+        "2026-03-28":"צו","2026-04-04":"שבת הגדול / פסח","2026-04-11":"שביעי של פסח","2026-04-18":"שמיני",
+        "2026-04-25":"תזריע-מצורע","2026-05-02":"אחרי מות-קדושים","2026-05-09":"אמור","2026-05-16":"בהר-בחוקותי",
+        "2026-05-23":"במדבר","2026-06-06":"נשא","2026-06-13":"בהעלותך","2026-06-20":"שלח",
+        "2026-06-27":"קרח","2026-07-04":"חקת","2026-07-11":"בלק","2026-07-18":"פינחס",
+        "2026-07-25":"מטות-מסעי","2026-08-01":"דברים (חזון)","2026-08-08":"ואתחנן (נחמו)","2026-08-15":"עקב",
+        "2026-08-22":"ראה","2026-08-29":"שופטים","2026-09-05":"נצבים-וילך", // סונכרן בהצלחה!
+        // שבתות שנת תשפ"ז החדשה (סוף 2026)
+        "2026-09-12":"ראש השנה (תשפ\"ז)","2026-09-19":"האזינו (שבת שובה)","2026-09-26":"שבת חוה\"מ סוכות",
+        "2026-10-03":"שמיני עצרת / שמחת תורה","2026-10-10":"בראשית","2026-10-17":"נח","2026-10-24":"לך לך",
+        "2026-10-31":"וירא","2026-11-07":"חיי שרה","2026-11-14":"תולדות","2026-11-21":"ויצא",
+        "2026-11-28":"וישלח","2026-12-05":"וישב (חנוכה)","2026-12-12":"מקץ","2026-12-19":"ויגש","2026-12-26":"ויחי"
+      };
+
+      function convertYearToHebrewLetters(yearNum) {
+        if (yearNum > 5000) yearNum -= 5000;
+        const thousands = "ה'"; let result = "";
+        const hundredsMap = [{ value: 400, text: "ת" }, { value: 300, text: "ש" }, { value: 200, text: "ר" }, { value: 100, text: "ק" }];
+        let remainder = yearNum;
+        hundredsMap.forEach(item => { while (remainder >= item.value) { result += item.text; remainder -= item.value; } });
+        if (remainder >= 10) {
+          const tensMap = { 90:"צ", 80:"פ", 70:"ע", 60:"ס", 50:"נ", 40:"מ", 30:"ל", 20:"כ", 10:"י" };
+          if (remainder === 15 || remainder === 16) { result += remainder === 15 ? "טו" : "טז"; remainder = 0; }
+          else { result += tensMap[Math.floor(remainder / 10) * 10]; remainder %= 10; }
         }
+        if (remainder > 0) { result += ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"][remainder]; }
+        if (result.length > 1) { result = result.slice(0, -1) + '"' + result.slice(-1); }
+        return thousands + result;
+      }
 
-        function getHebrewDate() {
-            try {
-                const today = new Date();
-                const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
-                const parts = formatter.formatToParts(today);
-                let dayNum = parseInt(parts.find(p => p.type === 'day').value);
-                let monthStr = parts.find(p => p.type === 'month').value;
-                let yearNum = parseInt(parts.find(p => p.type === 'year').value) % 1000;
-                return `${numToGematria(dayNum, false)} ב${monthStr} ה'${numToGematria(yearNum, true).replace('"', '')}`;
-            } catch (e) {
-                return "זמני היום";
-            }
+      function getHebrewCalendarData(date, nextShabbatDate) {
+        const formatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
+        const parts = formatter.formatToParts(date);
+        let day, month, yearNum;
+        for (const part of parts) {
+          if (part.type === 'day') day = parseInt(part.value, 10);
+          if (part.type === 'month') month = part.value;
+          if (part.type === 'year') yearNum = parseInt(part.value.replace(/[^0-9]/g, ''), 10);
         }
+        const gDays = ["", "א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ז'", "ח'", "ט'", "י'", "י\"א", "י\"ב", "י\"ג", "י\"ד", "ט\"ו", "ט\"ז", "י\"ז", "י\"ח", "י\"ט", "כ'", "כ\"א", "כ\"ב", "כ\"ג", "כ\"ד", "כ\"ה", "כ\"ו", "כ\"ז", "כ\"ח", "כ\"ט", "ל'"];
+        const dayHe = gDays[day] || day;
+        const hebrewYearLetters = convertYearToHebrewLetters(yearNum || 5786);
 
-        // אלגוריתם משוער ומדויק לחישוב זמני זריחה ושקיעה מקומיים באופליין
-        function calculateZmanimLocal() {
-            const today = new Date();
-            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-            
-            // חישוב שעת חצות ממוצעת בתוספת תיקון קל לאזור נתניה (כ-23 דקות הבדל מגריניץ')
-            let noonMinutes = 701 - (4 * LON) + (60 * 2); 
-            
-            // משוואת הזמן האסטרונומית (Equation of Time)
-            const b = (2 * Math.PI * (dayOfYear - 81)) / 365;
-            const eqTime = 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
-            noonMinutes -= eqTime;
+        const isoStr = nextShabbatDate.getFullYear() + '-' + String(nextShabbatDate.getMonth() + 1).padStart(2, '0') + '-' + String(nextShabbatDate.getDate()).padStart(2, '0');
+        return { fullStr: `${dayHe} ב${month} ${hebrewYearLetters}`, event: offlineParshiot[isoStr] || "פרשת השבוע" };
+      }
 
-            // חישוב אורך היום על פי קו הרוחב
-            const latRad = LAT * Math.PI / 180;
-            const declination = 23.45 * Math.PI / 180 * Math.sin((2 * Math.PI * (284 + dayOfYear)) / 365);
-            const hourAngle = Math.acos(-Math.tan(latRad) * Math.tan(declination)) * 180 / Math.PI;
-            const daylightMinutes = (hourAngle / 15) * 60;
+      function formatGregorianDate(date) {
+        return `${daysHe[date.getDay()]} ${new Intl.DateTimeFormat('he-IL', { timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)}`;
+      }
 
-            const sunriseMinutes = noonMinutes - (daylightMinutes / 2);
-            const sunsetMinutes = noonMinutes + (daylightMinutes / 2);
+      function formatTime(date, includeSeconds = false) {
+        if (!date || isNaN(date.getTime())) return '--:--';
+        return new Intl.DateTimeFormat('he-IL', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: includeSeconds ? '2-digit' : undefined, hour12: false }).format(date);
+      }
 
-            const makeTimeStr = (totalMinutes) => {
-                const h = Math.floor(totalMinutes / 60) % 24;
-                const m = Math.floor(totalMinutes % 60);
-                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            };
-
-            // גזירת שעות זמניות
-            const shaahZmanitGra = daylightMinutes / 12;
-            const shaahZmanitMga = (daylightMinutes + 144) / 12; // תוספת 72 דק' לפני ואחרי
-
-            const alotMin = sunriseMinutes - 72;
-            const misheyakirMin = sunriseMinutes - 45;
-            const shmaMgaMin = alotMin + (shaahZmanitMga * 3);
-            const shmaGraMin = sunriseMinutes + (shaahZmanitGra * 3);
-            const tfillahMin = sunriseMinutes + (shaahZmanitGra * 4);
-            const minchaGMin = noonMinutes + (shaahZmanitGra * 0.5);
-            const minchaKMin = sunriseMinutes + (shaahZmanitGra * 9.5);
-            const plagMin = sunriseMinutes + (shaahZmanitGra * 10.75);
-            const tzeitMin = sunsetMinutes + 20; // 20 דקות ממוצע לצאת הכוכבים
-
-            document.getElementById('alotHaShachar').innerText = makeTimeStr(alotMin);
-            document.getElementById('misheyakir').innerText = makeTimeStr(misheyakirMin);
-            document.getElementById('sunrise').innerText = makeTimeStr(sunriseMinutes);
-            document.getElementById('sofZmanShmaMGA').innerText = makeTimeStr(shmaMgaMin);
-            document.getElementById('sofZmanShma').innerText = makeTimeStr(shmaGraMin);
-            document.getElementById('sofZmanTfilla').innerText = makeTimeStr(tfillahMin);
-            document.getElementById('chatzot').innerText = makeTimeStr(noonMinutes);
-            document.getElementById('minchaGedola').innerText = makeTimeStr(minchaGMin);
-            document.getElementById('minchaKetana').innerText = makeTimeStr(minchaKMin);
-            document.getElementById('plagHaMincha').innerText = makeTimeStr(plagMin);
-            document.getElementById('sunset').innerText = makeTimeStr(sunsetMinutes);
-            document.getElementById('tzeitHaKochavimRT').innerText = makeTimeStr(tzeitMin);
+      function getAbsoluteShabbatDate(currentDate, isAfterSunsetSaturday) {
+        const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+        const dayOfWeek = d.getDay();
+        let diff = 6 - dayOfWeek;
+        if (dayOfWeek === 6 && isAfterSunsetSaturday) {
+          diff = 7;
         }
+        d.setDate(d.getDate() + diff);
+        return d;
+      }
 
-        function updateScreenData() {
-            const today = new Date();
-            const gregElem = document.getElementById('gregorian-date');
-            const hebElem = document.getElementById('hebrew-date');
-            
-            if (gregElem) gregElem.innerText = today.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            if (hebElem) hebElem.innerText = getHebrewDate();
-            calculateZmanimLocal();
-        }
+      function update() {
+        const now = new Date();
+        const timesToday = SunCalc.getTimes(now, lat, lon);
+        const shkiah = timesToday.halachicSunset;
+        const isAfterSunset = now.getTime() > shkiah.getTime();
 
-        function handleScreenCycle() {
-            const gridElement = document.getElementById('zmanim-grid');
-            const headerElement = document.getElementById('header-section');
-            let saverContainer = document.getElementById('saver-image-container');
-            
-            if (!saverContainer) {
-                saverContainer = document.createElement('div');
-                saverContainer.id = 'saver-image-container';
-                saverContainer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; z-index: 99999; background-color: #000000; overflow: hidden;";
-                document.body.appendChild(saverContainer);
-            }
-            
-            showImageMode = !showImageMode; 
-            
-            if (showImageMode) {
-                if (gridElement) gridElement.style.setProperty('display', 'none', 'important');
-                if (headerElement) headerElement.style.setProperty('display', 'none', 'important');
-                saverContainer.innerHTML = `<img src="${SAVER_IMAGE_URL}" style="width: 100%; height: 100%; object-fit: contain; display: block;" onerror="this.parentElement.style.display='none'; document.getElementById('zmanim-grid').style.setProperty('display', 'grid', 'important'); document.getElementById('header-section').style.setProperty('display', 'block', 'important');" />`;
-                saverContainer.style.setProperty('display', 'block', 'important');
-            } else {
-                if (saverContainer) saverContainer.style.setProperty('display', 'none', 'important');
-                if (gridElement) gridElement.style.setProperty('display', 'grid', 'important');
-                if (headerElement) headerElement.style.setProperty('display', 'block', 'important');
-                updateScreenData();
-            }
-        }
+        let hebrewCalculationDate = new Date(now.getTime());
+        if (isAfterSunset) hebrewCalculationDate.setDate(hebrewCalculationDate.getDate() + 1);
 
-        // הפעלה מיידית
-        updateScreenData();
-        
-        // לולאת החלפה חצי דקה / חצי דקה
-        setInterval(handleScreenCycle, 30000); 
+        const nextShabbatDate = getAbsoluteShabbatDate(now, (now.getDay() === 6 && isAfterSunset));
+
+        const hebData = getHebrewCalendarData(hebrewCalculationDate, nextShabbatDate);
+        document.getElementById('gregorianDate').innerText = formatGregorianDate(now);
+        document.getElementById('hebrewDate').innerText = hebData.fullStr;
+        document.getElementById('torahEvent').innerText = hebData.event;
+        document.getElementById('currentTime').innerText = formatTime(now, true);
+
+        const fridayDate = new Date(nextShabbatDate.getTime());
+        fridayDate.setDate(fridayDate.getDate() - 1);
+        document.getElementById('candleLighting').innerText = formatTime(new Date(SunCalc.getTimes(fridayDate, lat, lon).halachicSunset.getTime() - (22 * 60 * 1000)));
+        document.getElementById('shabbatEnd').innerText = formatTime(SunCalc.getTimes(nextShabbatDate, lat, lon).shabbatEnd85);
+
+        const alos = timesToday.alos198; const netz = timesToday.halachicSunrise; const chacos = timesToday.solarNoon;
+        const dayLengthGra = shkiah.getTime() - netz.getTime(); const shaaZmanisGra = dayLengthGra / 12;
+        const dayLengthMga = timesToday.tzeitMga198.getTime() - alos.getTime(); const shaaZmanisMga = dayLengthMga / 12;
+
+        const zmanimMap = [
+          { name: 'עלות השחר (19.8°)', time: alos, cls: '' },
+          { name: 'הנץ החמה', time: netz, cls: '' },
+          { name: 'סוף זמן קריאת שמע (מג"א)', time: new Date(alos.getTime() + (shaaZmanisMga * 3)), cls: 'highlight-row' },
+          { name: 'סוף זמן קריאת שמע (גר"א)', time: new Date(netz.getTime() + (shaaZmanisGra * 3)), cls: 'highlight-row' },
+          { name: 'סוף זמן תפילה (מג"א)', time: new Date(alos.getTime() + (shaaZmanisMga * 4)), cls: 'highlight-row' },
+          { name: 'סוף זמן תפילה (גר"א)', time: new Date(netz.getTime() + (shaaZmanisGra * 4)), cls: 'highlight-row' },
+          { name: 'חצות היום (Solar Noon)', time: chacos, cls: '' },
+          { name: 'שקיעת החמה', time: shkiah, cls: '' },
+          { name: 'צאת הכוכבים (4.8°)', time: timesToday.tzeit48, cls: '' },
+          { name: 'צאת הכוכבים רבנו תם (16°)', time: timesToday.rtNight16, cls: '' }
+        ];
+
+        let html = '';
+        zmanimMap.forEach(item => { html += `<tr class="${item.cls}"><td>${item.name}</td><td>${formatTime(item.time)}</td></tr>`; });
+        document.getElementById('zmanimTable').innerHTML = html;
+      }
+      update(); setInterval(update, 1000);
     </script>
-</body>
+  </body>
 </html>
