@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>זמני היום</title>
+    <style>
+      :root {
+        --bg: #f5f1e8;
+        --card: #fffdf9;
+        --ink: #1f2430;
+        --muted: #5d6574;
+        --line: #e5dcc7;
+        --accent: #7d4d2b;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(180deg, #efe7d9 0%, #f7f4ee 100%);
+        color: var(--ink);
+      }
+
+      .page {
+        max-width: 980px;
+        margin: 32px auto;
+        padding: 20px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 12px 30px rgba(57, 42, 29, 0.08);
+        overflow: hidden;
+      }
+
+      .header {
+        padding: 28px 30px 20px;
+        background: linear-gradient(135deg, #f9efe2 0%, #f4e3d1 100%);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .title {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        line-height: 1.2;
+        color: var(--accent);
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .stat {
+        background: #fefaf5;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.84rem;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+
+      .value {
+        font-size: clamp(1.2rem, 2vw, 1.8rem);
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .content {
+        padding: 20px 24px 24px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 14px 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: right;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      td:first-child {
+        font-weight: 600;
+      }
+
+      td:last-child {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+      }
+
+      .footnote {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 640px) {
+        .page { padding: 14px; }
+        .header, .stats, .content { padding-left: 16px; padding-right: 16px; }
+        th, td { padding: 12px 8px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="card">
+        <div class="header">
+          <h1 class="title">זמני היום</h1>
+          <div id="subtitle" class="subtitle">מחשב…</div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="label">תאריך עברי</span>
+            <div id="hebrewDate" class="value">מחשב…</div>
+          </div>
+          <div class="stat">
+            <span class="label">תאריך לועזי</span>
+            <div id="gregorianDate" class="value">מחשב…</div>
+          </div>
+          <div class="stat">
+            <span class="label">שעה נוכחית</span>
+            <div id="currentTime" class="value">מחשב…</div>
+          </div>
+          <div class="stat">
+            <span class="label">פרשת השבוע</span>
+            <div id="parsha" class="value">מחשב…</div>
+          </div>
+        </div>
+
+        <div class="content">
+          <table>
+            <thead>
+              <tr>
+                <th>זמן</th>
+                <th>שעה</th>
+              </tr>
+            </thead>
+            <tbody id="zmanimTable"></tbody>
+          </table>
+
+          <div class="footnote" id="footnote">מחשב לפי מיקום בשורת הכתובת:  powered by hebcal - 'address'?lat=1&lot=1 אופליין</div>
+        </div>0
+      </div>
+    </div>
+
+    <script src="./hebcal-core.js"></script>
+    <script>
+      const { HDate, Location, Sedra, Zmanim } = window.hebcal;
+
+      const params = new URLSearchParams(window.location.search);
+      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Jerusalem';
+      const defaults = {
+        lat: '32.3930556',
+        lon: '34.9205556',
+        tz: browserTz,
+        name: 'כפר הרא"ה',
+        il: '1',
+      };
+
+      const getParam = (key, fallback = defaults[key]) => {
+        const value = params.get(key);
+        return value !== null && value !== '' ? value : fallback;
+      };
+
+      const latitude = Number.parseFloat(getParam('lat'));
+      const longitude = Number.parseFloat(getParam('lon'));
+      const tz = getParam('tz', browserTz);
+      const locationName = getParam('name', `מיקום ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      const isIsrael = /^(1|true|yes|il)$/i.test(getParam('il'));
+
+      const loc = new Location(latitude, longitude, isIsrael, tz, locationName, isIsrael ? 'IL' : undefined);
+
+      const parshaNames = {
+        Bereshit: 'בראשית', Noach: 'נֹחַ', LechLecha: 'לֶךְ-לְךָ', Vayera: 'וַיֵּרָא', ChayeiSara: 'חַיֵּי שָׂרָה',
+        Toldot: 'תּוֹלְדוֹת', Vayetze: 'וַיֵּצָא', Vayishlach: 'וַיִּשְׁלַח', Vayeshev: 'וַיֵּשֶׁב', Miketz: 'מִקֵּץ',
+        Vayigash: 'וַיָּגֶשׁ', Vayechi: 'וַיְחִי', Shemot: 'שְׁמוֹת', Vaera: 'וָאֵרָא', Bo: 'בֹּא', Beshalach: 'בְּשַׁלַּח',
+        Yitro: 'יִתְרוֹ', Mishpatim: 'מִשְׁפָּטִים', Terumah: 'תְּרוּמָה', Tetzaveh: 'תְּצַוֶּה', KiTisa: 'כִּי תִשָּׂא',
+        Vayakhel: 'וַיַּקְהֵל', Pekudei: 'פְּקוּדֵי', Vayikra: 'וַיִּקְרָא', Tzav: 'צַו', Shemini: 'שְׁמִינִי', Tazria: 'תַּזְרִיעַ',
+        Metzora: 'מְצֹרָע', AchreiMot: 'אַחֲרֵי מוֹת', Kedoshim: 'קְדוֹשִׁים', Emor: 'אֱמוֹר', Behar: 'בְּהַר', Bechukotai: 'בְּחֻקֹּתַי',
+        Bamidbar: 'בְּמִדְבַּר', Nasso: 'נָשֹׂא', Behaalotcha: 'בְּהַעֲלֹתְךָ', Shelach: 'שְׁלַח-לְךָ', Korach: 'קֹרַח',
+        Chukat: 'חֻקַּת', Balak: 'בָּלָק', Pinchas: 'פִּינְחָס', Matot: 'מָטוֹת', Masei: 'מַסְעֵי', Devarim: 'דְּבָרִים',
+        Vaetchanan: 'וָאֶתְחַנַּן', Eikev: 'עֵקֶב', Reeh: 'רְאֵה', Shoftim: 'שׁוֹפְטִים', KiTeitzei: 'כִּי-תֵצֵא', KiTavo: 'כִּי-תָבוֹא',
+        Nitzavim: 'נִצָּבִים', Vayelech: 'וַיֵּלֶךְ', Vayeilech: 'וַיֵּלֶךְ', Haazinu: 'הַאֲזִינוּ', VezotHaberacha: 'וְזֹאת הַבְּרָכָה',
+        NitzavimVayelech: 'נִצָּבִים-וַיֵּלֶךְ', Shmini: 'שְׁמִינִי', Tzav: 'צַו'
+      };
+
+      function formatHebrewDate(date) {
+        return new HDate(date).renderGematriya();
+      }
+
+      function formatGregorianDate(date) {
+        return new Intl.DateTimeFormat('en-GB', {
+          timeZone: tz,
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }).format(date);
+      }
+
+      function asDate(value) {
+        if (value instanceof Date) return value;
+        if (value && typeof value.epochMilliseconds === 'number') return new Date(value.epochMilliseconds);
+        if (value && typeof value.toInstant === 'function') return new Date(value.toInstant().epochMilliseconds);
+        return new Date(value);
+      }
+
+      function formatTime(date, includeSeconds = false) {
+        return new Intl.DateTimeFormat('he-IL', {
+          timeZone: tz,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: includeSeconds ? '2-digit' : undefined,
+          hour12: false,
+        }).format(asDate(date));
+      }
+
+      function formatParshaForDate(date) {
+        const hdate = new HDate(date);
+        const sedra = new Sedra(hdate.getFullYear(), isIsrael);
+        const result = sedra.lookup(hdate);
+        if (!result || !result.parsha || !result.parsha.length) return 'לא נקבע';
+        const names = result.parsha.map((name) => parshaNames[name] || name).filter(Boolean);
+        return names.length ? names.join(' · ') : 'לא נקבע';
+      }
+
+      function update() {
+        const now = new Date();
+        const zmanim = new Zmanim(loc, now, false);
+
+        document.title = `זמני היום - ${locationName}`;
+        document.getElementById('subtitle').textContent = `${locationName} · ${latitude.toFixed(4)}° ${longitude >= 0 ? 'E' : 'W'} · ${tz}`;
+        document.getElementById('hebrewDate').textContent = formatHebrewDate(now);
+        document.getElementById('gregorianDate').textContent = formatGregorianDate(now);
+        document.getElementById('currentTime').textContent = formatTime(now, true);
+        document.getElementById('parsha').textContent = `פרשת ${formatParshaForDate(now)}`;
+
+        const rows = [
+          ['עלות השחר', zmanim.alotHaShachar()],
+          ['זריחה', zmanim.sunrise()],
+          ['סוף זמן קריאת שמע (מג"א)', zmanim.sofZmanShmaMGA()],
+          ['סוף זמן קריאת שמע (גר"א)', zmanim.sofZmanShma()],
+          ['סוף זמן תפילה (מג"א)', zmanim.sofZmanTfillaMGA()],
+          ['סוף זמן תפילה (גר"א)', zmanim.sofZmanTfilla()],
+          ['חצות היום', zmanim.chatzot()],
+          ['שקיעה', zmanim.sunset()],
+          ['צאת הכוכבים (4.8°)', zmanim.timeAtAngle(4.8, false)],
+        ];
+
+        const body = document.getElementById('zmanimTable');
+        body.innerHTML = rows
+          .map(([label, value]) => `<tr><td>${label}</td><td>${formatTime(value)}</td></tr>`)
+          .join('');
+      }
+
+      update();
+      setInterval(update, 1000);
+    </script>
+  </body>
+</html>
