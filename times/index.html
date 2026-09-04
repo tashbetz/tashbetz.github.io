@@ -194,13 +194,14 @@
             <img src="ad1.jpg" alt="ad" />
           </div>
 
-          <div class="footnote">הזמנים מחושבים לפי מיקום כפר הרא"ה, ונמסרים בתצוגה עברית.</div>
+          <div class="footnote">הזמנים מחושבים לפי מיקום כפר הרא"ה     powered by hebcal  אופליין</div>
         </div>
       </div>
     </div>
 
-    <script type="module">
-      import { HDate, Location, Sedra, Zmanim } from 'https://esm.sh/@hebcal/core';
+    <script src="./vendor/hebcal-core.js"></script>
+    <script>
+      const { HDate, Location, Sedra, Zmanim } = window.hebcal;
 
       const loc = new Location(32.3930556, 34.9205556, true, 'Asia/Jerusalem', 'כפר הרא"ה', 'IL');
       const tz = 'Asia/Jerusalem';
